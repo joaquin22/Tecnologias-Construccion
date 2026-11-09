@@ -1,0 +1,13 @@
+ID,Nombre,Apellido,Cargo,Departamento,Salario,Ciudad,Fecha_Ingreso,Notas
+101,Ana,García,Directora de Tecnología,Sistemas,4500000,"Bogotá, D.C.",2021-03-15,"Líder técnica y arquitecta principal"
+102,Carlos,Rodríguez,"Ingeniero de Software ""Senior""",Sistemas,3800000,Medellín,2022-01-10,"Especialista en Web Workers y alto rendimiento"
+103,María,Fernández,Diseñadora UX/UI,Producto,2900000,Cali,2022-07-22,"Rediseño de interfaz de usuario completado"
+104,Juan,Martínez,Analista de Datos,Operaciones,3200000,"Barranquilla, Atlántico",2020-11-05,"Gestión de pipelines ETL y tableros BI"
+105,Laura,López,Coordinadora de RRHH,Recursos Humanos,2800000,Bucaramanga,2023-02-01,"Plan de reclutamiento de talentos"
+106,Andrés,Gómez,Desarrollador Frontend,Sistemas,2600000,Manizales,2023-06-18,"Optimización del tiempo de carga web"
+107,Sofía,Pérez,Especialista en QA,Calidad,2700000,Pereira,2022-09-12,"Automatización de pruebas end-to-end"
+108,Diego,Torres,Gerente de Proyectos,Operaciones,4100000,"Cartagena, Bolívar",2019-05-30,"Metodologías ágiles Scrum/Kanban"
+109,Valentina,Vargas,Científica de Datos,Sistemas,4200000,Medellín,2021-08-14,"Modelos predictivos en Python"
+110,Mateo,Ramírez,Soporte Técnico,Infraestructura,2100000,Bogotá,2024-01-15,"Mantenimiento preventivo y redes"
+111,Camila,Morales,Redactora de Contenido,Marketing,2300000,Cali,2023-04-10,"Estrategias SEO y contenido técnico"
+112,Sebastián,Castro,DevOps Engineer,Sistemas,3900000,Medellín,2022-04-01,"Infraestructura en la nube con Docker y K8s"
