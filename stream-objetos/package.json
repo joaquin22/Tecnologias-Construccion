@@ -1,0 +1,21 @@
+{
+  "name": "stream-objetos-nodejs",
+  "version": "1.0.0",
+  "description": "Demostración simple y visual de Streams de Objetos en Node.js (objectMode: true)",
+  "main": "src/cli.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "cli": "node src/cli.js",
+    "test": "node src/cli.js"
+  },
+  "keywords": [
+    "nodejs",
+    "stream",
+    "objectMode",
+    "pipeline",
+    "streams"
+  ],
+  "author": "",
+  "license": "MIT"
+}

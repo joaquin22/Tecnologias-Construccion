@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Node.js Object Stream Explorer</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 1.5rem;
+    }
+
+    .badge-node {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    /* Stream Pipeline Diagram */
+    .pipeline-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px dashed var(--card-border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+    }
+
+    .pipeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      min-width: 150px;
+    }
+
+    .step-type {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+    }
+
+    .step-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 2px 0;
+    }
+
+    .step-mode {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .pipeline-arrow {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    /* Controls */
+    .controls-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .inputs-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      align-items: center;
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .control-item label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .control-item input, .control-item select {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .control-item input:focus, .control-item select:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #042f2e;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-secondary {
+      background: #334155;
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background: #475569;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .stat-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-top: 0.35rem;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    /* Progress bar */
+    .progress-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .progress-bar-bg {
+      background: #0f172a;
+      border-radius: 9999px;
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--purple));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Objects Stream Container */
+    .stream-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .stream-header h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .stream-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .order-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: border-color 0.2s ease;
+    }
+
+    .order-card:hover {
+      border-color: #475569;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .order-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .order-id {
+      font-family: monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .order-customer {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .order-product {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .order-price {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pill-APROBADO {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .pill-REQUIERE_VERIFICACION {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .pill-EXPRESS {
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--purple);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .json-toggle {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    .json-preview {
+      display: none;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3.5rem 1rem;
+      color: var(--text-muted);
+      border: 2px dashed var(--card-border);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-node">🟢 Node.js Core Streams (objectMode: true)</div>
+      <h1>Visualizador de Stream de Objetos</h1>
+      <p class="subtitle">
+        Demostración interactiva de procesamiento por lotes y tuberías (pipelines) de objetos JavaScript en tiempo real.
+      </p>
+    </header>
+
+    <!-- Visual Architecture of the Stream -->
+    <div class="pipeline-diagram">
+      <div class="pipeline-step">
+        <span class="step-type">Readable Stream</span>
+        <span class="step-name">OrderGenerator</span>
+        <span class="step-mode">objectMode: true</span>
+      </div>
+      <div class="pipeline-arrow">➔</div>
+      <div class="pipeline-step">
+        <span class="step-type">Transform Stream</span>
+        <span class="step-name">OrderProcessor</span>
+        <span class="step-mode">Calcula IVA y clasifica</span>
+      </div>
+      <div class="pipeline-arrow">➔</div>
+      <div class="pipeline-step">
+        <span class="step-type">Transform Stream</span>
+        <span class="step-name">ObjectToSSE</span>
+        <span class="step-mode">Convierte a SSE bytes</span>
+      </div>
+      <div class="pipeline-arrow">➔</div>
+      <div class="pipeline-step">
+        <span class="step-type">Writable Stream</span>
+        <span class="step-name">HTTP Response</span>
+        <span class="step-mode">Navegador (EventSource)</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-card">
+      <div class="inputs-group">
+        <div class="control-item">
+          <label for="totalObjects">Cantidad de objetos:</label>
+          <select id="totalObjects">
+            <option value="5">5 objetos</option>
+            <option value="12" selected>12 objetos</option>
+            <option value="25">25 objetos</option>
+            <option value="50">50 objetos</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <label for="intervalSpeed">Intervalo entre objetos:</label>
+          <select id="intervalSpeed">
+            <option value="150">Rápido (150ms)</option>
+            <option value="400" selected>Normal (400ms)</option>
+            <option value="800">Lento (800ms)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button id="startBtn" class="btn-primary">▶ Iniciar Stream</button>
+        <button id="stopBtn" class="btn-danger" disabled>⏹ Detener</button>
+        <button id="clearBtn" class="btn-secondary">🗑 Limpiar</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Objetos Recibidos</div>
+        <div class="stat-value" id="countVal">0 <span style="font-size: 1rem; color: var(--text-muted);" id="countTarget">/ 0</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Volumen Total</div>
+        <div class="stat-value" style="color: var(--primary);" id="totalVal">$0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Impuestos (IVA)</div>
+        <div class="stat-value" style="color: var(--text-muted);" id="taxVal">$0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Estado del Canal</div>
+        <div class="stat-value" style="font-size: 1.25rem;" id="channelStatus">
+          <span style="color: var(--text-muted);">Inactivo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-container">
+      <div class="progress-header">
+        <span>Progreso del Stream</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+    </div>
+
+    <!-- Live Stream Feed -->
+    <div class="stream-header">
+      <h2>Objetos en el Flujo (Tiempo Real)</h2>
+      <span style="font-size: 0.85rem; color: var(--text-muted);" id="feedCounter">0 elementos</span>
+    </div>
+
+    <div id="streamList" class="stream-list">
+      <div class="empty-state" id="emptyState">
+        Haz clic en <strong>"Iniciar Stream"</strong> para comenzar a recibir los objetos emitidos por el servidor Node.js.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let eventSource = null;
+    let receivedCount = 0;
+    let totalSum = 0;
+    let taxSum = 0;
+    let expectedTotal = 0;
+
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const totalSelect = document.getElementById('totalObjects');
+    const intervalSelect = document.getElementById('intervalSpeed');
+
+    const countVal = document.getElementById('countVal');
+    const countTarget = document.getElementById('countTarget');
+    const totalVal = document.getElementById('totalVal');
+    const taxVal = document.getElementById('taxVal');
+    const channelStatus = document.getElementById('channelStatus');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+    const streamList = document.getElementById('streamList');
+    const emptyState = document.getElementById('emptyState');
+    const feedCounter = document.getElementById('feedCounter');
+
+    function resetUI() {
+      receivedCount = 0;
+      totalSum = 0;
+      taxSum = 0;
+      countVal.textContent = '0';
+      countTarget.textContent = `/ ${expectedTotal}`;
+      totalVal.textContent = '$0.00';
+      taxVal.textContent = '$0.00';
+      progressBar.style.width = '0%';
+      progressPercent.textContent = '0%';
+      feedCounter.textContent = '0 elementos';
+      streamList.innerHTML = '';
+      streamList.appendChild(emptyState);
+      emptyState.style.display = 'block';
+    }
+
+    function stopStream() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      channelStatus.innerHTML = '<span style="color: var(--text-muted);">Desconectado</span>';
+    }
+
+    startBtn.addEventListener('click', () => {
+      stopStream();
+
+      expectedTotal = parseInt(totalSelect.value, 10);
+      const interval = parseInt(intervalSelect.value, 10);
+      resetUI();
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      channelStatus.innerHTML = '<span style="color: var(--success); font-weight: 600;">● Fluyendo...</span>';
+
+      const url = `/api/stream?total=${expectedTotal}&interval=${interval}`;
+      eventSource = new EventSource(url);
+
+      eventSource.onmessage = (event) => {
+        try {
+          const order = JSON.parse(event.data);
+          renderOrderCard(order);
+        } catch (e) {
+          console.error('Error parseando objeto recibido:', e);
+        }
+      };
+
+      eventSource.addEventListener('done', () => {
+        channelStatus.innerHTML = '<span style="color: var(--primary); font-weight: 600;">✔ Finalizado</span>';
+        stopStream();
+      });
+
+      eventSource.onerror = (err) => {
+        channelStatus.innerHTML = '<span style="color: var(--danger);">✖ Error o Cerrado</span>';
+        stopStream();
+      };
+    });
+
+    stopBtn.addEventListener('click', () => {
+      stopStream();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      stopStream();
+      resetUI();
+      channelStatus.innerHTML = '<span style="color: var(--text-muted);">Inactivo</span>';
+    });
+
+    function renderOrderCard(order) {
+      if (emptyState.style.display !== 'none') {
+        emptyState.style.display = 'none';
+      }
+
+      receivedCount++;
+      totalSum += order.totalAmount;
+      taxSum += order.tax;
+
+      // Update counters
+      countVal.firstChild.textContent = `${receivedCount} `;
+      totalVal.textContent = `$${totalSum.toFixed(2)}`;
+      taxVal.textContent = `$${taxSum.toFixed(2)}`;
+      feedCounter.textContent = `${receivedCount} elementos`;
+
+      // Update progress
+      const pct = Math.min(100, Math.round((receivedCount / expectedTotal) * 100));
+      progressBar.style.width = `${pct}%`;
+      progressPercent.textContent = `${pct}%`;
+
+      // Create card
+      const card = document.createElement('div');
+      card.className = 'order-card';
+
+      const dateStr = new Date(order.createdAt).toLocaleTimeString();
+
+      card.innerHTML = `
+        <div class="order-row">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="order-id">${order.orderId}</span>
+            <span class="pill pill-${order.status}">${order.status}</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">${dateStr}</span>
+          </div>
+          <div class="order-price">$${order.totalAmount.toFixed(2)} USD</div>
+        </div>
+
+        <div class="order-row">
+          <div>
+            <span class="order-customer">👤 ${order.customer}</span>
+            <span style="margin: 0 6px; color: var(--card-border);">|</span>
+            <span class="order-product">📦 ${order.product}</span>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Subtotal: $${order.amount} + IVA (16%): $${order.tax}
+          </div>
+        </div>
+
+        <div>
+          <button class="json-toggle" onclick="toggleJson('json-${order.orderId}')">Ver objeto JSON crudo</button>
+          <pre id="json-${order.orderId}" class="json-preview">${JSON.stringify(order, null, 2)}</pre>
+        </div>
+      `;
+
+      // Prepend to show newest on top
+      streamList.insertBefore(card, streamList.firstChild);
+    }
+
+    window.toggleJson = function(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+      }
+    };
+  </script>
+</body>
+</html>
