@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Países | API Countries.dev</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Encabezado Principal -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="badge">Tecnologías de Construcción • Asincronía</div>
+                <h1>Explorador de Países</h1>
+                <p>
+                    Consulta de información geográfica y lingüística en tiempo real consumiendo la API de 
+                    <a href="https://countries.dev/docs" target="_blank" rel="noopener noreferrer">countries.dev</a> 
+                    mediante <code>fetch</code> y <code>async/await</code>.
+                </p>
+            </div>
+        </header>
+
+        <!-- Mensaje / Alerta de Error -->
+        <div id="errorAlert" class="alert alert-error" style="display: none;" role="alert">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-body">
+                <strong id="errorTitle">Error de conexión</strong>
+                <p id="errorMessage">No fue posible obtener los datos de la API.</p>
+                <button id="retryBtn" class="btn btn-sm btn-retry">Reintentar</button>
+            </div>
+        </div>
+
+        <!-- Panel de Filtros / Selectores -->
+        <section class="card filters-section">
+            <h2 class="section-title">
+                <span class="icon">🌍</span> Selección de Ubicación
+            </h2>
+            <div class="filters-grid">
+                <!-- Selector de Región -->
+                <div class="form-group">
+                    <label for="regionSelect">
+                        <strong>1. Region</strong>
+                        <span class="label-hint">(América, Asia, Europa, África, Oceanía, etc.)</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="regionSelect" aria-label="Seleccionar región">
+                            <option value="">Cargando regiones...</option>
+                        </select>
+                        <div id="regionSpinner" class="spinner" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Selector de País -->
+                <div class="form-group">
+                    <label for="countrySelect">
+                        <strong>2. Country</strong>
+                        <span class="label-hint">(Gambia, Peru, etc.)</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="countrySelect" disabled aria-label="Seleccionar país">
+                            <option value="">-- Primero selecciona una región --</option>
+                        </select>
+                        <div id="countrySpinner" class="spinner" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Estado Inicial / Placeholder -->
+        <section id="placeholderState" class="card placeholder-card">
+            <div class="placeholder-icon">🗺️</div>
+            <h3>Selecciona una región y un país</h3>
+            <p>Elige una región del primer menú desplegable para cargar los países disponibles y ver su tabla de información con <strong>Languages</strong> y <strong>native name</strong>.</p>
+        </section>
+
+        <!-- Estado de Carga -->
+        <section id="loadingState" class="card loading-card" style="display: none;">
+            <div class="large-spinner"></div>
+            <p id="loadingText">Cargando información del país...</p>
+        </section>
+
+        <!-- Sección de Información del País Seleccionado -->
+        <section id="countryDetailsSection" class="country-details" style="display: none;">
+            <!-- Cabecera del País -->
+            <div class="card country-header-card">
+                <div class="country-identity">
+                    <div class="flag-container">
+                        <img id="countryFlagImg" src="" alt="Bandera" class="country-flag" />
+                        <span id="countryFlagEmoji" class="country-emoji-flag"></span>
+                    </div>
+                    <div class="country-titles">
+                        <div class="sub-badge" id="countryCodeBadge">PE • PER</div>
+                        <h2 id="countryName">Perú</h2>
+                        <p class="country-subinfo">
+                            <span id="countryNativeNameBadge" class="native-name-pill">Nombre nativo: <strong>Perú</strong></span>
+                            <span id="countryRegionBadge" class="region-pill">Americas • South America</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA 1: Tabla Principal Requerida (Country, Native Name, Languages) -->
+            <div class="card table-card">
+                <div class="table-header">
+                    <h3 class="table-title">
+                        <span class="icon">📋</span> Información del País (Languages y Native Name)
+                    </h3>
+                    <span class="badge badge-req">Información Requerida</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="mainCountryTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Country (País)</th>
+                                <th style="width: 35%;">Native Name (Nombre Nativo)</th>
+                                <th style="width: 40%;">Languages (Idiomas)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="highlight-row">
+                                <td id="mainTableCountry">
+                                    <span class="country-flag-icon" id="mainFlagIcon"></span>
+                                    <strong id="mainCountryName">-</strong>
+                                </td>
+                                <td id="mainTableNativeName" class="cell-highlight">
+                                    <span id="mainNativeNameText">-</span>
+                                </td>
+                                <td id="mainTableLanguages" class="cell-highlight">
+                                    <div id="mainLanguagesContainer">-</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLA 2: Desglose Detallado de Idiomas (Languages Breakdown) -->
+            <div class="card table-card">
+                <div class="table-header">
+                    <h3 class="table-title">
+                        <span class="icon">🗣️</span> Desglose Detallado de Idiomas (Languages)
+                    </h3>
+                    <span class="counter-badge" id="languagesCountBadge">1 idioma</span>
+                </div>
+                <p class="table-description">
+                    Listado de todos los idiomas oficiales asociados al país con su nombre en inglés, 
+                    su denominación nativa (<strong>nativeName</strong>) y códigos ISO estándar.
+                </p>
+                <div class="table-responsive">
+                    <table class="data-table languages-table" id="languagesTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">#</th>
+                                <th style="width: 32%;">Idioma (Language)</th>
+                                <th style="width: 36%;">Nombre Nativo del Idioma (Native Name)</th>
+                                <th style="width: 12%;">Código ISO 639-1</th>
+                                <th style="width: 12%;">Código ISO 639-2</th>
+                            </tr>
+                        </thead>
+                        <tbody id="languagesTableBody">
+                            <!-- Filas generadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Ficha de Datos Geográficos Complementarios -->
+            <div class="card table-card">
+                <div class="table-header">
+                    <h3 class="table-title">
+                        <span class="icon">🌐</span> Datos Geográficos y Demográficos
+                    </h3>
+                    <span class="badge badge-light">countries.dev</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="extraDataTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Atributo</th>
+                                <th style="width: 65%;">Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Capital</strong></td>
+                                <td id="cellCapital">-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Región / Subregión</strong></td>
+                                <td id="cellRegion">-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Población</strong></td>
+                                <td id="cellPopulation">-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Moneda(s)</strong></td>
+                                <td id="cellCurrencies">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pie de página -->
+        <footer class="app-footer">
+            <p>
+                Aplicación desarrollada para <strong>Tecnologías de Construcción</strong> • Consumo asíncrono con 
+                <code>async/await</code> y <code>fetch</code> de la API <a href="https://countries.dev" target="_blank" rel="noopener noreferrer">countries.dev</a>.
+            </p>
+        </footer>
+    </div>
+
+    <!-- Script Principal Asíncrono -->
+    <script src="app.js"></script>
+</body>
+</html>
